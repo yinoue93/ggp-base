@@ -1,5 +1,4 @@
-package assignments.assignment2;
-
+package assignments.assignment3;
 
 import java.util.List;
 
@@ -13,7 +12,7 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class A2MiniMax extends SampleGamer {
+public class A3BoundedDepth extends SampleGamer {
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -82,6 +81,6 @@ public class A2MiniMax extends SampleGamer {
 
 	@Override
 	public String getName() {
-		return "A2MiniMax";
+		return "A3BoundedDepth";
 	}
 }
