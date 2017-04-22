@@ -1,6 +1,8 @@
 package assignments.assignment3;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.player.gamer.statemachine.sample.SampleGamer;
@@ -28,12 +30,80 @@ public class A3BoundedDepth extends SampleGamer {
 		return roles.get(newIndx);
 	}
 
-	public int scoreRecurse(StateMachine machine, Role playerRole, Role currPlayer, MachineState state2Eval, boolean doMax, long finishBy) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+	public void printTicTacToeState(MachineState state2Eval){
+		String stateStr = state2Eval.toString();
+
+		char[] ticStr = new char[12];
+		ticStr[3] = '\n';
+		ticStr[7] = '\n';
+		ticStr[11] = '\n';
+		Matcher m = Pattern.compile("cell [1-3] [1-3] [xob]").matcher(stateStr);
+		while (m.find()) {
+			String cellStr = m.group();
+			int row = Character.getNumericValue(cellStr.charAt(5)) - 1;
+			int col = Character.getNumericValue(cellStr.charAt(7)) - 1;
+			char symbol = cellStr.charAt(9);
+
+			ticStr[col*4+row] = symbol;
+		}
+
+		for(char c : ticStr){
+			System.out.print(c);
+		}
+	}
+
+	public double mobilityRecurse(StateMachine machine, Role player, Role currPlayer, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
+		if((System.currentTimeMillis() > finishBy) || steps==0 || machine.isTerminal(state2Eval)) {
+			double moveSz = machine.getLegalMoves(state2Eval, currPlayer).size();
+			double feasibleSz = machine.findActions(player).size();
+			return moveSz/feasibleSz;
+		}
+
+		List<Move> moves = getStateMachine().getLegalMoves(state2Eval, currPlayer);
+
+		int nextStep = (player==currPlayer) ? steps-1:steps;
+		Role nextPlayer = getNextPlayer(machine, currPlayer);
+		double results = 0;
+		for (Move m : moves){
+			List<Move> M = machine.getRandomJointMove(state2Eval, currPlayer, m);
+			MachineState nextState = machine.getNextState(state2Eval, M);
+
+			results += mobilityRecurse(machine, player, nextPlayer, nextState, nextStep, finishBy);
+		}
+
+		return results/moves.size();
+	}
+
+	public int mobility(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
+		double mobilityScore = mobilityRecurse(machine, player, player, state2Eval, steps, finishBy);
+
+		return (int)(mobilityScore * 100);
+	}
+
+	public int focus(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
+		int mobilityScore = mobility(machine, player, state2Eval, steps, finishBy);
+
+		return 100 - mobilityScore;
+	}
+
+	public int evalfn(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
+		int mobilityScore = mobility(machine, player, state2Eval, steps, finishBy);
+
+		return mobilityScore;
+	}
+
+	public int scoreRecurse(StateMachine machine, Role playerRole, Role currPlayer, MachineState state2Eval, boolean doMax, long finishBy, int level, int steps) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
 		if(machine.isTerminal(state2Eval)) {
 			return machine.getGoal(state2Eval, playerRole);
 		}
 		else if(System.currentTimeMillis() > finishBy){
 			return doMax ? 0:100;
+		}
+		else if(doMax && level==0){
+			return evalfn(machine, playerRole, state2Eval, steps, finishBy);
+		}
+		else if(!doMax){
+			level--;
 		}
 
 		List<Move> moves = getStateMachine().getLegalMoves(state2Eval, currPlayer);
@@ -44,7 +114,9 @@ public class A3BoundedDepth extends SampleGamer {
 			List<Move> M = machine.getRandomJointMove(state2Eval, currPlayer, m);
 			MachineState nextState = machine.getNextState(state2Eval, M);
 
-			int result = scoreRecurse(machine, playerRole, nextPlayer, nextState, !doMax, finishBy);
+			int result = scoreRecurse(machine, playerRole, nextPlayer, nextState, !doMax, finishBy, level, steps);
+
+			if((doMax && result==100) || (!doMax && result==0)){return result;}
 			score = doMax ? Math.max(result, score):Math.min(result, score);
 		}
 
@@ -57,6 +129,10 @@ public class A3BoundedDepth extends SampleGamer {
 		long start = System.currentTimeMillis();
 		long finishBy = timeout - 500;
 
+		// level=10, mobilitySteps=3 scores 100 for Task 3.3
+		int level = 2;
+		int mobilitySteps = 4;
+
 		StateMachine machine = getStateMachine();
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
 
@@ -66,8 +142,13 @@ public class A3BoundedDepth extends SampleGamer {
 			List<Move> M = machine.getRandomJointMove(getCurrentState(), getRole(), m);
 			MachineState nextState = machine.getNextState(getCurrentState(), M);
 
-			int result = scoreRecurse(machine, getRole(), getNextPlayer(machine, getRole()), nextState, false, finishBy);
-			if(result>score){
+			int result = scoreRecurse(machine, getRole(), getNextPlayer(machine, getRole()), nextState, false, finishBy, level, mobilitySteps);
+
+			if(result==100){
+				selection = m;
+				break;
+			}
+			else if(result>score){
 				score = result;
 				selection = m;
 			}
