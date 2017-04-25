@@ -86,10 +86,28 @@ public class A3BoundedDepth extends SampleGamer {
 		return 100 - mobilityScore;
 	}
 
-	public int evalfn(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
-		int mobilityScore = mobility(machine, player, state2Eval, steps, finishBy);
+	public int getUtility(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		List<Integer> Goals = machine.getGoals(state2Eval);
+		if((System.currentTimeMillis() > finishBy) || steps==0 || machine.isTerminal(state2Eval)) {
+			return Goals.get(0);
+		}
+		int utilityValue = 0;
+		for (int goal : Goals){
+			if (goal > utilityValue) {
+				utilityValue = goal;
+			}
+		}
 
-		return mobilityScore;
+
+		return utilityValue;
+	}
+
+	public int evalfn(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		int mobilityScore = mobility(machine, player, state2Eval, steps, finishBy);
+		int utilityValue = getUtility(machine, player, state2Eval, steps, finishBy);
+
+		return utilityValue;
+		//return mobilityScore;
 	}
 
 	public int scoreRecurse(StateMachine machine, Role playerRole, Role currPlayer, MachineState state2Eval, boolean doMax, long finishBy, int level, int steps) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
