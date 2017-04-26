@@ -184,7 +184,7 @@ public class A3BoundedDepth extends SampleGamer {
 
 		while(System.currentTimeMillis() < finishBy) {
 			int result = 0;
-			System.out.println("Level: " + level);
+			//System.out.println("Level: " + level);
 
 			for(Move m : moves){
 				List<Move> M = machine.getRandomJointMove(getCurrentState(), getRole(), m);
