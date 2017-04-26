@@ -76,7 +76,6 @@ public class A3BoundedDepth extends SampleGamer {
 
 	public int mobility(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy) throws MoveDefinitionException, TransitionDefinitionException{
 		double mobilityScore = mobilityRecurse(machine, player, player, state2Eval, steps, finishBy);
-
 		return (int)(mobilityScore * 100);
 	}
 
@@ -123,10 +122,12 @@ public class A3BoundedDepth extends SampleGamer {
 		int utilityValue = getUtility(machine, player, state2Eval, steps, finishBy);
 		int opponentMobility = minOpponentMobility(machine, player, state2Eval, steps, finishBy, opponents);
 
-
-		return opponentMobility;
+		//return opponentMobility;
 		//return utilityValue;
 		//return mobilityScore;
+		int score = (int)(opponentMobility / 3.0 + utilityValue / 3.0 + mobilityScore / 3.0);
+		//System.out.println("Score: " + score);
+		return score;
 	}
 
 	public int scoreRecurse(StateMachine machine, Role playerRole, Role currPlayer, MachineState state2Eval, boolean doMax, long finishBy, int level, int steps, List<Role> opponents) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
@@ -167,8 +168,10 @@ public class A3BoundedDepth extends SampleGamer {
 		long finishBy = timeout - 500;
 
 		// level=10, mobilitySteps=3 scores 100 for Task 3.3
-		int level = 2;
-		int mobilitySteps = 4;
+		int level = 1;
+		int mobilitySteps = 3;
+//		int level = 10;
+//		int mobilitySteps = 3;
 
 		StateMachine machine = getStateMachine();
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
@@ -178,20 +181,32 @@ public class A3BoundedDepth extends SampleGamer {
 
 		Move selection = moves.get(0);
 		int score = 0;
-		for(Move m : moves){
-			List<Move> M = machine.getRandomJointMove(getCurrentState(), getRole(), m);
-			MachineState nextState = machine.getNextState(getCurrentState(), M);
 
-			int result = scoreRecurse(machine, getRole(), getNextPlayer(machine, getRole()), nextState, false, finishBy, level, mobilitySteps, opponents);
+		while(System.currentTimeMillis() < finishBy) {
+			int result = 0;
+			System.out.println("Level: " + level);
 
-			if(result==100){
-				selection = m;
+			for(Move m : moves){
+				List<Move> M = machine.getRandomJointMove(getCurrentState(), getRole(), m);
+				MachineState nextState = machine.getNextState(getCurrentState(), M);
+
+				result = scoreRecurse(machine, getRole(), getNextPlayer(machine, getRole()), nextState, false, finishBy, level, mobilitySteps, opponents);
+
+				if(result==100){
+					selection = m;
+					break;
+				}
+				else if(result>score){
+					score = result;
+					selection = m;
+				}
+			}
+
+			if(result == 100) {
 				break;
 			}
-			else if(result>score){
-				score = result;
-				selection = m;
-			}
+
+			level++;
 		}
 
 		long stop = System.currentTimeMillis();
