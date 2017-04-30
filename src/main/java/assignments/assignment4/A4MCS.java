@@ -1,4 +1,4 @@
-package assignments.assignment3;
+package assignments.assignment4;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -14,7 +14,7 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class A3BoundedDepth extends SampleGamer {
+public class A4MCS extends SampleGamer {
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -117,16 +117,47 @@ public class A3BoundedDepth extends SampleGamer {
 		return 100-avg;
 	}
 
-	public int evalfn(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy, List<Role> opponents) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		int mobilityScore = mobility(machine, player, state2Eval, steps, finishBy);
-		int utilityValue = getUtility(machine, player, state2Eval, steps, finishBy);
-		int opponentMobility = minOpponentMobility(machine, player, state2Eval, steps, finishBy, opponents);
+	public int montecarlo(StateMachine machine, Role player, MachineState state2Eval, long finishBy) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		int total = 0;
+		int num_trials = 100;
 
-		//return opponentMobility;
-		//return utilityValue;
-		//return mobilityScore;
-		int score = (int)(opponentMobility / 3.0 + utilityValue / 3.0 + mobilityScore / 3.0);
-		//System.out.println("Score: " + score);
+		for(int i=0; i<num_trials; i++){
+			total += playout(machine, player, state2Eval, finishBy);
+
+			if(System.currentTimeMillis() > finishBy)
+				return total/(i+1);
+		}
+
+		return total/num_trials;
+	}
+
+	public int playout(StateMachine machine, Role player, MachineState state2Eval, long finishBy) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException{
+		if(System.currentTimeMillis() > finishBy) {return 0;}
+
+		if(machine.isTerminal(state2Eval)) {return machine.getGoal(state2Eval, player);}
+
+		List<Move> randomMoves = machine.getRandomJointMove(state2Eval);
+		MachineState newState = machine.getNextState(state2Eval, randomMoves);
+
+		return playout(machine, player, newState, finishBy);
+	}
+
+	public int evalfn(StateMachine machine, Role player, MachineState state2Eval, int steps, long finishBy, List<Role> opponents) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		double coef_mobility = 0;
+		double coef_opp_mobility = 0;
+		double coef_utility = 0;
+		double coef_montecarlo = 1;
+
+		int mobilityScore = (coef_mobility==0) ? 0:mobility(machine, player, state2Eval, steps, finishBy);
+		int opponentMobility = (coef_opp_mobility==0) ? 0:minOpponentMobility(machine, player, state2Eval, steps, finishBy, opponents);
+		int utilityValue = (coef_utility==0) ? 0:getUtility(machine, player, state2Eval, steps, finishBy);
+		int monteScore = (coef_montecarlo==0) ? 0:montecarlo(machine, player, state2Eval, finishBy);
+
+		int score = (int)(coef_opp_mobility*opponentMobility
+						  + coef_utility*utilityValue
+						  + coef_mobility*mobilityScore
+						  + coef_montecarlo*monteScore);
+//		System.out.println("Score: " + score);
 		return score;
 	}
 
@@ -217,6 +248,6 @@ public class A3BoundedDepth extends SampleGamer {
 
 	@Override
 	public String getName() {
-		return "A3BoundedDepth";
+		return "A4MCS";
 	}
 }
