@@ -9,6 +9,7 @@ import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class Util {
 
@@ -34,25 +35,37 @@ public class Util {
 		}
 	}
 
-	public static void printTree(Node n, String prefix) throws MoveDefinitionException{
-		int[] utils = n.getUtilitySums();
-		int[] visits = n.getVisitCount();
+	public static double selectfn(int utilNum, int utilDenom, int pVisits, int visits, int doMax){
+		return doMax*((double)utilNum)/utilDenom + GlobalA5.EXPLORATION_PARAM*Math.sqrt(Math.log(pVisits)/visits);
+	}
+
+	public static void printTree(Node n, String prefix, int depth) throws MoveDefinitionException, TransitionDefinitionException{
+		if(depth==0){return;}
+
 		Node[] children = n.getChildren();
-		int totalVisits = n.getTotalVisitCount();
 		StateMachine machine = n.getMachine();
 		MachineState state = n.getState();
 		Role currRole = n.getCurrRole();
 		List<Move> legalMoves = machine.getLegalMoves(state, currRole);
 
+		int[] childUtilNum = n.getChildUtilNum();
+		int[] childUtilDenom = n.getChildUtilDenom();
+
+		int totalVisits = n.getTotalVisits();
+		int[] visits = n.getChildVisits();
+
+		int doMax = n.getDoMax() ? 1:-1;
 		System.out.println(prefix + "--Total Visits:" + totalVisits + "--");
-		for(int i=0; i<utils.length; i++){
+		for(int i=0; i<childUtilNum.length; i++){
 //			System.out.println("---------------------------------------");
-			System.out.println(prefix + "Move: " + legalMoves.get(i) + " UtilitySum: " + utils[i] +
-								" Utility: " + utils[i]/visits[i] + " Visits: " + visits[i]);
-//			System.out.println(selectfn(utils[i], visits[i], totalVisits));
+
+			System.out.println(prefix + "Move: " + legalMoves.get(i) + " UtilNum: " + childUtilNum[i] +
+								" UtilDenom: " + childUtilDenom[i] + " Utility: " + (double)childUtilNum[i]/childUtilDenom[i] +
+								" Visits: " + visits[i] + " SelectFn: "
+								+ selectfn(childUtilNum[i], childUtilDenom[i], totalVisits, visits[i], doMax));
 
 			if(children[i]!=null)
-				printTree(children[i], prefix+"    ");
+				printTree(children[i], prefix+"    ", depth-1);
 		}
 	}
 
