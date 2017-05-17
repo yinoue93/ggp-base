@@ -23,12 +23,20 @@ class GlobalA5{
 	public static final int EXPANSION_VISIT_COUNT = 8;
 }
 
+
+
 public class A5MCTS extends SampleGamer {
 
 	private Node root = null;
 	private int currPlayerIndx = 0;
 
 	private long finishBy;
+
+	//makes it a prop net
+	@Override
+	public StateMachine getInitialStateMachine() {
+		return new PropNetStateMachine();
+	}
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -98,6 +106,7 @@ public class A5MCTS extends SampleGamer {
 		System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=");
 
 		StateMachine machine = getStateMachine();
+		//StateMachine machine = new PropNetStateMachine();
 		Role player = getRole();
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), player);
 		List<Role> players = machine.getRoles();

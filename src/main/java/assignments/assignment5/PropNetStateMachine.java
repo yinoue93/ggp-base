@@ -13,6 +13,9 @@ import org.ggp.base.util.gdl.grammar.GdlRelation;
 import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
+import org.ggp.base.util.propnet.architecture.components.And;
+import org.ggp.base.util.propnet.architecture.components.Not;
+import org.ggp.base.util.propnet.architecture.components.Or;
 import org.ggp.base.util.propnet.architecture.components.Proposition;
 import org.ggp.base.util.propnet.factory.OptimizingPropNetFactory;
 import org.ggp.base.util.statemachine.MachineState;
@@ -56,8 +59,8 @@ public class PropNetStateMachine extends StateMachine {
      */
     @Override
     public boolean isTerminal(MachineState state) {
-        // TODO: Compute whether the MachineState is terminal.
-        return false;
+    	markbases(state);
+    	return propmarkp(propNet.getTerminalProposition());
     }
 
     /**
@@ -65,12 +68,17 @@ public class PropNetStateMachine extends StateMachine {
      * Should return the value of the goal proposition that
      * is true for that role. If there is not exactly one goal
      * proposition true for that role, then you should throw a
-     * GoalDefinitionException because the goal is ill-defined.
+     * GoalDefinitionException because the goal is ill-defined
      */
     @Override
     public int getGoal(MachineState state, Role role)
             throws GoalDefinitionException {
-        // TODO: Compute the goal for role in state.
+    	Map<Role, Set<Proposition>> goalMap = propNet.getGoalPropositions();
+    	if (goalMap.get(role).size() > 1) throw new GoalDefinitionException(state, role);
+
+    	for(Proposition prop: goalMap.get(role) ) {
+    		return getGoalValue(prop);
+    	}
         return -1;
     }
 
@@ -81,8 +89,21 @@ public class PropNetStateMachine extends StateMachine {
      */
     @Override
     public MachineState getInitialState() {
-        // TODO: Compute the initial state.
-        return null;
+        Proposition initProp = propNet.getInitProposition();
+
+        initProp.setValue(true);
+        List<Proposition> allProps = getOrdering();
+        //propogate
+
+        for(int i = 0; i < allProps.size(); i++) {
+        	Proposition currProp = allProps.get(i);
+        	Component prevInput = currProp.getSingleInput();
+        	boolean newValue = propmarkp(prevInput);
+        	currProp.setValue(newValue);
+
+        }
+
+        return getStateFromBase();
     }
 
     /**
@@ -92,7 +113,24 @@ public class PropNetStateMachine extends StateMachine {
     public List<Move> findActions(Role role)
             throws MoveDefinitionException {
         // TODO: Compute legal moves.
-        return null;
+    	List<Role> roles = propNet.getRoles();
+        Set<Proposition> legalProps = new HashSet<Proposition>();
+        for (int i = 0; i < roles.size(); i++) {
+        	if (role == roles.get(i)) {
+        		legalProps = propNet.getLegalPropositions().get(role);
+        		break;
+        	}
+        }
+
+    // Get legal moves
+
+        List<Move> moves = new ArrayList<Move>();
+        for(Proposition prop: legalProps) {
+        	if (propmarkp(prop)) {
+        		moves.add(PropNetStateMachine.getMoveFromProposition(prop));
+        	}
+        }
+        return moves;
     }
 
     /**
@@ -102,7 +140,28 @@ public class PropNetStateMachine extends StateMachine {
     public List<Move> getLegalMoves(MachineState state, Role role)
             throws MoveDefinitionException {
         // TODO: Compute legal moves.
-        return null;
+
+    	 markbases(state);
+    	// Get legal propositions for role
+    	    List<Role> roles = propNet.getRoles();
+    	    Set<Proposition> legalProps = new HashSet<Proposition>();
+    	    for (int i = 0; i < roles.size(); i++) {
+    	    	if (role == roles.get(i)) {
+    	    		legalProps = propNet.getLegalPropositions().get(role);
+    	    		break;
+    	    	}
+    	    }
+
+
+    	// Get legal moves
+
+    	    List<Move> moves = new ArrayList<Move>();
+    	    for(Proposition prop: legalProps) {
+    	    	if (propmarkp(prop)) {
+    	    		moves.add(PropNetStateMachine.getMoveFromProposition(prop));
+    	    	}
+    	    }
+    	    return moves;
     }
 
     /**
@@ -112,7 +171,17 @@ public class PropNetStateMachine extends StateMachine {
     public MachineState getNextState(MachineState state, List<Move> moves)
             throws TransitionDefinitionException {
         // TODO: Compute the next state.
-        return null;
+    	 markactions(moves);
+    	 markbases(state);
+    	 Set<Proposition> baseProps = new HashSet<Proposition>(propNet.getBasePropositions().values());
+    	 Set<GdlSentence> nexts = new HashSet<GdlSentence>();
+    	 for(Proposition prop: baseProps) {
+    	    if(prop.getSingleInput().getSingleInput().getValue()) {
+    	    	nexts.add(prop.getName());
+    	    }
+    	 }
+    	return new MachineState(nexts);
+
     }
 
     /**
@@ -141,6 +210,51 @@ public class PropNetStateMachine extends StateMachine {
         List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 
         // TODO: Compute the topological ordering.
+
+        Map<GdlSentence, Proposition> baseProps = propNet.getBasePropositions();
+        Map<GdlSentence, Proposition> inputProps = propNet.getInputPropositions();
+
+        for(int i = 0; i < propositions.size(); i++) {
+        	Proposition currProp = propositions.get(i);
+        	if(!baseProps.containsValue(currProp) && !inputProps.containsValue(currProp)) {
+        		order.add(currProp);
+        	}
+        }
+
+       /* while(!components.isEmpty()) {
+        	Component node = components.get(0);
+        	for(int i = propositions.size() - 1; i >= 0; i--) {
+        		if(node == propositions.get(i)) {
+        			Proposition prop = propositions.get(i);
+        			propositions.remove(i);
+        			order.add(prop);
+        			Set<Component> outputEdges = node.getOutputs();
+        			Iterator<Component> it = outputEdges.iterator();
+        			while(it.hasNext()) {
+        				Component curr = it.next();
+        				Set<Component> outputNodes = (curr.getOutputs());
+        				for(int j = components.size() - 1; j >= 0; j--) {
+    						if(components.get(j) == curr) {
+    							components.remove(j);
+    							break;
+    						}
+    					}
+
+        				Iterator<Component> outputIt = outputNodes.iterator();
+        				while(outputIt.hasNext()) {
+        					Component connectedNode = outputIt.next();
+        					Set<Component> inputSet = connectedNode.getInputs();
+        					if(inputSet.size() == 1) {
+        						components.add(connectedNode);
+        					}
+        				}
+
+        			}
+        		}
+        	}
+        } */
+
+
 
         return order;
     }
@@ -218,5 +332,91 @@ public class PropNetStateMachine extends StateMachine {
 
         }
         return new MachineState(contents);
+    }
+
+ // chapter 10 basis function implementations
+    public void markbases(MachineState s){
+    	Set<GdlSentence> stateGdls = s.getContents();
+    	Map<GdlSentence, Proposition> baseProps = propNet.getBasePropositions();
+
+    	// create the proposition marking boolean array
+    	int count = 0;
+    	boolean[] baseMarks = new boolean[baseProps.size()];
+    	Proposition[] props = new Proposition[baseProps.size()];
+    	for(GdlSentence g : baseProps.keySet()){
+    		baseMarks[count] = stateGdls.contains(g);
+    		props[count++] = baseProps.get(g);
+    	}
+
+    	count = 0;
+    	for (Proposition p : props){
+    		p.setValue(baseMarks[count++]);
+    	}
+    }
+
+    public void markactions(List<Move> moves){
+    	List<GdlSentence> actionGdls = new ArrayList<GdlSentence>();
+    	for(int i=0; i<moves.size(); i++){
+    		Move m = moves.get(i);
+    		actionGdls.add(m.getContents().toSentence());
+    	}
+
+    	Map<GdlSentence, Proposition> inputProps = propNet.getInputPropositions();
+
+    	// create the proposition marking boolean array
+    	int count = 0;
+    	boolean[] actionMarks = new boolean[inputProps.size()];
+    	Proposition[] props = new Proposition[inputProps.size()];
+    	for(GdlSentence g : inputProps.keySet()){
+    		actionMarks[count] = actionGdls.contains(g);
+    		props[count++] = inputProps.get(g);
+    	}
+
+    	count = 0;
+    	for (Proposition p : props){
+
+    		p.setValue(actionMarks[count++]);
+    	}
+    }
+
+    public void clearpropnet(){
+    	Map<GdlSentence, Proposition> props = propNet.getBasePropositions();
+	    for (Proposition p : props.values()){
+    		p.setValue(false);
+    	}
+    }
+
+    public boolean propmarkp (Component p){
+    	if (p instanceof Not) {return propmarknegation(p);}
+    	if (p instanceof And) {return propmarkconjunction(p);}
+    	if (p instanceof Or) {return propmarkdisjunction(p);}
+
+    	Map<GdlSentence, Proposition> bases = propNet.getBasePropositions();
+    	if (bases.values().contains(p)) {return p.getValue();}
+
+    	Map<GdlSentence, Proposition> inputs = propNet.getInputPropositions();
+    	if (inputs.values().contains(p)) {return p.getValue();}
+
+    	return propmarkp(p.getSingleInput());
+    }
+
+    public boolean propmarknegation (Component p){
+    	return !propmarkp(p.getSingleInput());
+    }
+
+    public boolean propmarkconjunction (Component p){
+    	Set<Component> sources = p.getInputs();
+    	for (Component c : sources){
+    		if (!propmarkp(c)) {return false;}
+    	}
+    	return true;
+    }
+
+    public boolean propmarkdisjunction (Component p){
+    	Set<Component> sources = p.getInputs();
+    	for (Component c : sources){
+    		if (propmarkp(c)) {return true;}
+    	}
+    	return false;
     }
 }
