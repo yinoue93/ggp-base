@@ -14,6 +14,7 @@ import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.propnet.architecture.Component;
 import org.ggp.base.util.propnet.architecture.PropNet;
 import org.ggp.base.util.propnet.architecture.components.And;
+import org.ggp.base.util.propnet.architecture.components.Constant;
 import org.ggp.base.util.propnet.architecture.components.Not;
 import org.ggp.base.util.propnet.architecture.components.Or;
 import org.ggp.base.util.propnet.architecture.components.Proposition;
@@ -216,7 +217,7 @@ public class PropNetStateMachine extends StateMachine {
 
         for(int i = 0; i < propositions.size(); i++) {
         	Proposition currProp = propositions.get(i);
-        	if(!baseProps.containsValue(currProp) && !inputProps.containsValue(currProp)) {
+        	if(currProp != propNet.getInitProposition() && !baseProps.containsValue(currProp) && !inputProps.containsValue(currProp)) {
         		order.add(currProp);
         	}
         }
@@ -387,6 +388,8 @@ public class PropNetStateMachine extends StateMachine {
     }
 
     public boolean propmarkp (Component p){
+
+    	if (p instanceof Constant) {return p.getValue();}
     	if (p instanceof Not) {return propmarknegation(p);}
     	if (p instanceof And) {return propmarkconjunction(p);}
     	if (p instanceof Or) {return propmarkdisjunction(p);}
