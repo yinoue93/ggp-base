@@ -112,6 +112,8 @@ public class A5MCTS extends SampleGamer {
 		List<Role> players = machine.getRoles();
 		int numPlayers = players.size();
 
+		Util.printTicTacToeState(this.getCurrentState());
+
 		Move selection = null;
 
 		// create the root node if this is the first time

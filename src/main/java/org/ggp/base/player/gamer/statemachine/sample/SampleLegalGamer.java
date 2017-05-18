@@ -24,10 +24,10 @@ public final class SampleLegalGamer extends SampleGamer
 {
 
 	//makes it a prop net
-		@Override
-		public StateMachine getInitialStateMachine() {
-			return new PropNetStateMachine();
-		}
+	@Override
+	public StateMachine getInitialStateMachine() {
+		return new PropNetStateMachine();
+	}
 
 	/**
 	 * This function is called at the start of each round
