@@ -159,20 +159,6 @@ public class PropNetStateMachine extends StateMachine {
 	    	}
 	    }
 
-	    // debug code
-	    System.out.println(moves);
-
-    	// Get legal moves
-	    List<Move> moves2 = new ArrayList<Move>();
-	    for(Proposition prop: propNet.getLegalPropositions().get(roles.get(0))) {
-	    	if (propmarkp(prop)) {
-	    		moves2.add(PropNetStateMachine.getMoveFromProposition(prop));
-	    	}
-	    }
-
-	    System.out.println(moves2);
-	    // end debug code
-
 	    return moves;
     }
 
@@ -183,26 +169,22 @@ public class PropNetStateMachine extends StateMachine {
     public MachineState getNextState(MachineState state, List<Move> moves)
             throws TransitionDefinitionException {
         // TODO: Compute the next state.
+
 		markactions(moves);
 		markbases(state);
 
-		propagate();
 		Set<Proposition> baseProps = new HashSet<Proposition>(propNet.getBasePropositions().values());
 		Set<GdlSentence> nexts = new HashSet<GdlSentence>();
 
-		System.out.println("-----------getNextState()----------");
 		for(Proposition prop: baseProps) {
-			if(prop.getSingleInput().getSingleInput().getValue()) {
+			if(propmarkp(prop.getSingleInput().getSingleInput())) {
 				nexts.add(prop.getName());
-				System.out.println(prop.getName());
 			}
 		}
 
-		System.out.println("****************");
-		Util.printTicTacToeState(new MachineState(nexts));
-		System.out.println("****************");
-		System.exit(0);
-    	return new MachineState(nexts);
+		Util.printTicTacToeState(state);
+
+		return new MachineState(nexts);
 
     }
 
@@ -372,10 +354,8 @@ public class PropNetStateMachine extends StateMachine {
     		props[count++] = baseProps.get(g);
     	}
 
-    	System.out.println("actions: ");
     	for (int i=0; i<props.length; i++){
     		props[i].setValue(baseMarks[i]);
-    		System.out.println(baseMarks[i] + " : " + props[i]);
     	}
     }
 
@@ -416,6 +396,8 @@ public class PropNetStateMachine extends StateMachine {
 
     	Map<GdlSentence, Proposition> inputs = propNet.getInputPropositions();
     	if (inputs.values().contains(p)) {return p.getValue();}
+
+    	if (p==propNet.getInitProposition()) {return p.getValue();}
 
     	return propmarkp(p.getSingleInput());
     }
