@@ -33,10 +33,10 @@ public class A5MCTS extends SampleGamer {
 	private long finishBy;
 
 	//makes it a prop net
-	@Override
-	public StateMachine getInitialStateMachine() {
-		return new PropNetStateMachine();
-	}
+//	@Override
+//	public StateMachine getInitialStateMachine() {
+//		return new PropNetStateMachine();
+//	}
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException

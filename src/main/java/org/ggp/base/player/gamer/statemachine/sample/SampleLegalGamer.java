@@ -4,9 +4,12 @@ import java.util.List;
 
 import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+
+import assignments.assignment5.PropNetStateMachine;
 
 /**
  * SampleLegalGamer is a minimal gamer which always plays the first
@@ -19,6 +22,13 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
  */
 public final class SampleLegalGamer extends SampleGamer
 {
+
+	//makes it a prop net
+		@Override
+		public StateMachine getInitialStateMachine() {
+			return new PropNetStateMachine();
+		}
+
 	/**
 	 * This function is called at the start of each round
 	 * You are required to return the Move your player will play
