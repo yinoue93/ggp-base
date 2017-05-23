@@ -4,6 +4,7 @@ import org.ggp.base.player.event.PlayerTimeEvent;
 import org.ggp.base.player.gamer.Gamer;
 import org.ggp.base.player.gamer.event.GamerNewMatchEvent;
 import org.ggp.base.player.gamer.event.GamerUnrecognizedMatchEvent;
+import org.ggp.base.player.gamer.exception.AbortingException;
 import org.ggp.base.player.gamer.exception.MetaGamingException;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -36,11 +37,12 @@ public final class StartRequest extends Request
 	}
 
 	@Override
-	public String process(long receptionTime)
+	public String process(long receptionTime) throws AbortingException
 	{
 	    // Ensure that we aren't already playing a match. If we are,
 	    // ignore the message, saying that we're busy.
         if (gamer.getMatch() != null) {
+        	//gamer.abort();
             GamerLogger.logError("GamePlayer", "Got start message while already busy playing a game: ignoring.");
             gamer.notifyObservers(new GamerUnrecognizedMatchEvent(matchId));
             return "busy";
