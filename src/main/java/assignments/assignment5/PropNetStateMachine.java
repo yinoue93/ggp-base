@@ -361,6 +361,7 @@ public class PropNetStateMachine extends StateMachine {
     		baseMarks[count] = stateGdls.contains(g);
     		props[count++] = baseProps.get(g);
     	}
+
     	System.out.println("actions: ");
     	for (int i=0; i<props.length; i++){
     		props[i].setValue(baseMarks[i]);
@@ -416,8 +417,6 @@ public class PropNetStateMachine extends StateMachine {
 
     	Map<GdlSentence, Proposition> inputs = propNet.getInputPropositions();
     	if (inputs.values().contains(p)) {return p.getValue();}
-
-
 
     	if (p==propNet.getInitProposition()) {return p.getValue();}
 
