@@ -187,15 +187,11 @@ public class PropNetStateMachine extends StateMachine {
 			}
 		}
 
-<<<<<<< HEAD
-		return new MachineState(nexts);
-=======
 		System.out.println("****************");
 		Util.printTicTacToeState(new MachineState(nexts));
 		System.out.println("****************");
 		System.exit(0);
     	return new MachineState(nexts);
->>>>>>> parent of caf761b... fixed propnet bugs
 
     }
 
@@ -365,17 +361,9 @@ public class PropNetStateMachine extends StateMachine {
     		baseMarks[count] = stateGdls.contains(g);
     		props[count++] = baseProps.get(g);
     	}
-<<<<<<< HEAD
+
     	for (int i=0; i<props.length; i++){
     		props[i].setValue(baseMarks[i]);
-
-=======
-
-    	System.out.println("actions: ");
-    	for (int i=0; i<props.length; i++){
-    		props[i].setValue(baseMarks[i]);
-    		System.out.println(baseMarks[i] + " : " + props[i]);
->>>>>>> parent of caf761b... fixed propnet bugs
     	}
     }
 
@@ -428,12 +416,9 @@ public class PropNetStateMachine extends StateMachine {
     	Map<GdlSentence, Proposition> inputs = propNet.getInputPropositions();
     	if (inputs.values().contains(p)) {return p.getValue();}
 
-<<<<<<< HEAD
 
     	if (p==propNet.getInitProposition()) {return p.getValue();}
 
-=======
->>>>>>> parent of caf761b... fixed propnet bugs
     	return propmarkp(p.getSingleInput());
     }
 
