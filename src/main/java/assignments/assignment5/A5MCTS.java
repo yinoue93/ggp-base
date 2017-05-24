@@ -19,8 +19,8 @@ class GlobalA5{
 	public final static int TIMEOUT_BUFFER = 2000;
 
 	// hyperparameters
-	public final static int EXPLORATION_PARAM = 12;
-	public static final int EXPANSION_VISIT_COUNT = 8;
+	public final static int EXPLORATION_PARAM = 8;
+	public static final int EXPANSION_VISIT_COUNT = 1;
 }
 
 
@@ -33,10 +33,10 @@ public class A5MCTS extends SampleGamer {
 	private long finishBy;
 
 	//makes it a prop net
-//	@Override
-//	public StateMachine getInitialStateMachine() {
-//		return new PropNetStateMachine();
-//	}
+@Override
+public StateMachine getInitialStateMachine() {
+	return new PropNetStateMachine();
+}
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -101,9 +101,9 @@ public class A5MCTS extends SampleGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=");
+		/*System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=");
 		System.out.println(currPlayerIndx);
-		System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=");
+		System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=");*/
 
 		StateMachine machine = getStateMachine();
 		//StateMachine machine = new PropNetStateMachine();
@@ -129,23 +129,23 @@ public class A5MCTS extends SampleGamer {
 
 			// figure out the last move taken
 			Move prevMove = machine.getMoveFromTerm(mostRecentMove.get(prevPlayerIndx));
-			System.out.println("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+");
+			/*System.out.println("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+");
 			System.out.println("Move taken in last turn: " + prevMove);
-			System.out.println("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+");
+			System.out.println("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+");*/
 
 			// choose the correct subtree and set it as the root node
 			List<Move> childrenMoves = root.getLegalMoves();
 			int indexChosen = childrenMoves.indexOf(prevMove);
 			Node[] chNode = root.getChildren();
-			System.out.println(indexChosen);
-			for(int i=0; i<chNode.length; i++){
+			//System.out.println(indexChosen);
+			/*for(int i=0; i<chNode.length; i++){
 				System.out.println(i + ": " + childrenMoves.get(i));
 				System.out.println(chNode[i]);
-			}
+			}*/
 
 			// the subtree was not expanded fully- recreate root
 			if(indexChosen==-1 || root.getChildren()[indexChosen]==null){
-				System.out.println("Recreating root node...");
+				//System.out.println("Recreating root node...");
 				root = new Node(machine, getCurrentState(), players.indexOf(player), players, player);
 			}
 			else{
