@@ -19,8 +19,8 @@ class GlobalA5{
 	public final static int TIMEOUT_BUFFER = 2000;
 
 	// hyperparameters
-	public final static int EXPLORATION_PARAM = 8;
-	public static final int EXPANSION_VISIT_COUNT = 1;
+	public final static int EXPLORATION_PARAM = 10;
+	public static final int EXPANSION_VISIT_COUNT = 4;
 }
 
 
@@ -33,10 +33,10 @@ public class A5MCTS extends SampleGamer {
 	private long finishBy;
 
 	//makes it a prop net
-@Override
-public StateMachine getInitialStateMachine() {
-	return new PropNetStateMachine();
-}
+	@Override
+	public StateMachine getInitialStateMachine() {
+		return new PropNetStateMachine();
+	}
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -112,14 +112,17 @@ public StateMachine getInitialStateMachine() {
 		List<Role> players = machine.getRoles();
 		int numPlayers = players.size();
 
-		Util.printTicTacToeState(this.getCurrentState());
+//		Util.printTicTacToeState(this.getCurrentState());
 
 		Move selection = null;
+
+		long start = System.currentTimeMillis();
+		finishBy = timeout - GlobalA5.TIMEOUT_BUFFER;
 
 		// create the root node if this is the first time
 		List<GdlTerm> mostRecentMove = getMatch().getMostRecentMoves();
 		if(mostRecentMove == null){
-			root = new Node(machine, getCurrentState(), players.indexOf(player), players, player);
+			root = new Node(machine, getCurrentState(), players.indexOf(player), players, player, finishBy);
 			currPlayerIndx = 0;
 		}
 		// update the root as the subtree from the previous turn
@@ -146,7 +149,7 @@ public StateMachine getInitialStateMachine() {
 			// the subtree was not expanded fully- recreate root
 			if(indexChosen==-1 || root.getChildren()[indexChosen]==null){
 				//System.out.println("Recreating root node...");
-				root = new Node(machine, getCurrentState(), players.indexOf(player), players, player);
+				root = new Node(machine, getCurrentState(), players.indexOf(player), players, player, finishBy);
 			}
 			else{
 				root = root.getChildren()[indexChosen];
@@ -162,8 +165,6 @@ public StateMachine getInitialStateMachine() {
 		}
 
 		// set finish time
-		long start = System.currentTimeMillis();
-		finishBy = timeout - GlobalA5.TIMEOUT_BUFFER;
 		root.setFinishBy(finishBy);
 
 		// run MCTS if there are more than 1 move available
@@ -172,7 +173,7 @@ public StateMachine getInitialStateMachine() {
 				mcts(root);
 			}
 
-			Util.printTree(root, "", 4);
+//			Util.printTree(root, "", 4);
 
 			// choose the action
 			selection = root.getBestMove();

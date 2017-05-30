@@ -126,6 +126,12 @@ public final class PropNet
 		this.legalInputMap = makeLegalInputMap();
 	}
 
+    public void clearpropnet(){
+	    for (Proposition props : propositions){
+	    	props.setValue(false);
+    	}
+    }
+
 	public List<Role> getRoles()
 	{
 	    return roles;

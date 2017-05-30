@@ -1,6 +1,7 @@
 package assignments.assignment5;
 
 import java.util.List;
+import java.util.Random;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -43,13 +44,14 @@ public class Node{
 	// Mutators
 	public void setFinishBy(long f) {finishBy = f;}
 
-	public Node(StateMachine m, MachineState s, int nodeRoleIndx, List<Role> rs, Role playerR)
+	public Node(StateMachine m, MachineState s, int nodeRoleIndx, List<Role> rs, Role playerR, long finishB)
 					throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
 
 		if(m!=null){
 			roles = rs;
 			player = playerR;
 			machine = m;
+			finishBy = finishB;
 		}
 
 		state = s;
@@ -76,7 +78,7 @@ public class Node{
 
 	public Node(MachineState s, int nodeRoleIndx)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		this(null, s, nodeRoleIndx, null, null);
+		this(null, s, nodeRoleIndx, null, null, 0);
 	}
 
 	public int playout(int mvIndx) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException{
@@ -130,6 +132,12 @@ public class Node{
 				bestMv = legalMoves.get(i);
 			}
 		}
+
+		if(bestScore==0){
+			Random ran = new Random();
+			bestMv = legalMoves.get(ran.nextInt(legalMoves.size()));
+		}
+
 		return bestMv;
 	}
 
